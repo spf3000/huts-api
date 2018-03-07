@@ -1,0 +1,21 @@
+{
+  "listing":{
+    "id":"5e22a83a-6f4f-11e6-8b77-86f30ca893d3",
+    "contact":{
+      "phone":"15126841100",
+      "formattedPhone":"+1 512-684-1100"
+    },
+    "address":{
+      "address":"1011 W 5th St",
+      "postalCode":"1011",
+      "countryCode":"US",
+      "city":"Austin",
+      "state":"TX",
+      "country":"United States"
+    },
+    "location":{
+      "lat":40.4255485534668,
+      "lng":-3.7075681686401367
+    }
+  }
+}
