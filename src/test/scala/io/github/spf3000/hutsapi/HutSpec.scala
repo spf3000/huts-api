@@ -1,11 +1,11 @@
-package io.github.spf3000.listingsapi
+package io.github.spf3000.hutsapi
 
 
 import cats.effect.IO
 import io.circe.generic.auto._
 import io.circe.syntax._
 import io.circe.Json
-import io.github.spf3000.listingsapi.entities.{Address, Contact, Listing, Location}
+import io.github.spf3000.hutsapi.entities.{Address, Contact, Hut, Location}
 import org.http4s.circe._
 import org.http4s._
 import org.http4s.implicits._
@@ -19,7 +19,7 @@ import scala.io.Source
   *  I left them in to show process
   */
 
-class ListingSpec extends org.specs2.mutable.Specification {
+class HutSpec extends org.specs2.mutable.Specification {
 
   "Get Listings" >> {
     "return 200" >> {
@@ -54,7 +54,7 @@ class ListingSpec extends org.specs2.mutable.Specification {
 
   private[this] val retGetListing: Response[IO] = {
     val getLstngs = Request[IO](Method.GET, Uri.uri("/listings/123"))
-    ListingServer.service.orNotFound(getLstngs).unsafeRunSync()
+    HutServer.service.orNotFound(getLstngs).unsafeRunSync()
   }
 
   private[this] def getListingsReturns200(): MatchResult[Status] =
@@ -67,7 +67,7 @@ class ListingSpec extends org.specs2.mutable.Specification {
 
   private[this] val retPostListing: Response[IO] =  {
     val postLstngs = Request[IO](Method.POST, Uri.uri("/listings")).withBody(listing.asJson).unsafeRunSync()
-    ListingServer.service.orNotFound(postLstngs).unsafeRunSync()
+    HutServer.service.orNotFound(postLstngs).unsafeRunSync()
   }
 
   private[this] def postListingReturns201(): MatchResult[Status] =
@@ -80,7 +80,7 @@ class ListingSpec extends org.specs2.mutable.Specification {
 
   private[this] def retPutListing: Response[IO] = {
     val putLsting = Request[IO](Method.PUT, Uri.uri("/listings")).withBody(listing.asJson).unsafeRunSync()
-    ListingServer.service.orNotFound(putLsting).unsafeRunSync()
+    HutServer.service.orNotFound(putLsting).unsafeRunSync()
   }
 
   private[this] def putListingReturns204(): MatchResult[Status] =
@@ -89,7 +89,7 @@ class ListingSpec extends org.specs2.mutable.Specification {
 
   private[this] def retDeleteListing: Response[IO] = {
     val delLstng = Request[IO](Method.DELETE, Uri.uri("/listings/1234"))
-    ListingServer.service.orNotFound(delLstng).unsafeRunSync()
+    HutServer.service.orNotFound(delLstng).unsafeRunSync()
   }
 
   private[this] def deleteListingReturns204(): MatchResult[Status] =
@@ -100,7 +100,7 @@ class ListingSpec extends org.specs2.mutable.Specification {
       Request[IO](Method.POST, Uri.uri("/listings")).withBody(listing.asJson).unsafeRunSync()
       Request[IO](Method.GET, Uri.uri("/listings/1234"))
     }
-    ListingServer.service.orNotFound(requests.unsafeRunSync()).unsafeRunSync()
+    HutServer.service.orNotFound(requests.unsafeRunSync()).unsafeRunSync()
   }
 
   private[this] def postThenGetListingReturns204  =
@@ -111,7 +111,7 @@ class ListingSpec extends org.specs2.mutable.Specification {
   private val address = Address("10 Downing Street", "SW1A 2AA", "UK", "London", "London", "United Kingdom")
   private val location = Location("40.4255485534668", "-3.7075681686401367")
 
-  private val listing = Listing(contact, address, location)
+  private val listing = Hut(contact, address, location)
 
 
 
