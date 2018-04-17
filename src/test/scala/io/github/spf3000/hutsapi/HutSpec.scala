@@ -107,12 +107,5 @@ class HutSpec extends org.specs2.mutable.Specification {
     retPostThenGetListing.status must beEqualTo(Status.Ok)
 
 
-  private val contact = Contact("0123456789", "01234 567 89")
-  private val address = Address("10 Downing Street", "SW1A 2AA", "UK", "London", "London", "United Kingdom")
-  private val location = Location("40.4255485534668", "-3.7075681686401367")
-
-  private val listing = Hut(contact, address, location)
-
-
 
 }

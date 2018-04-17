@@ -9,10 +9,10 @@ import org.http4s.dsl.Http4sDsl
 import org.http4s.server.blaze.BlazeBuilder
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import entities.Hut
+import scala.collection.mutable.ListBuffer
 
+import entities.Hut
 import entities._
-import HutRepository._
 
 object HutServer extends StreamApp[IO] with Http4sDsl[IO] {
 
@@ -22,25 +22,28 @@ object HutServer extends StreamApp[IO] with Http4sDsl[IO] {
 
   implicit val endcoder = jsonEncoderOf[IO, HutWithId]
 
+  val hutRepo = HutRepository.empty.unsafeRunSync()
+
   val HUTS = "huts"
 
   val service = HttpService[IO] {
+    
 
     case GET -> Root / HUTS / hutId =>
-      getHut(hutId)
+      hutRepo.getHut(hutId)
           .flatMap(_.fold(NotFound())(Ok(_)))
 
     case req @ POST -> Root / HUTS =>
-         req.as[Hut].flatMap(addHut).flatMap(Ok(_))
+         req.as[Hut].flatMap(hutRepo.addHut).flatMap(Created(_))
 
     case req @ PUT -> Root / HUTS =>
       req.as[HutWithId]
-        .flatMap(updateHut)
-          .flatMap(_.fold(NotFound())(Ok(_)))
+        .flatMap(hutRepo.updateHut)
+          .flatMap(Ok(_))
 
     case DELETE -> Root / HUTS / hutId =>
-      deleteHut(hutId)
-        .flatMap(_ => Ok())
+      hutRepo.deleteHut(hutId)
+        .flatMap(_ => NoContent())
 
   }
 

@@ -2,38 +2,37 @@ package io.github.spf3000.hutsapi
 
 import java.util.UUID
 
+import scala.collection.mutable.ListBuffer
+
 import cats.effect.IO
 import io.github.spf3000.hutsapi.entities._
 
-import scala.collection.mutable.ListBuffer
 
-  object HutRepository {
+final class HutRepository(private val huts: ListBuffer[HutWithId]) {
+  val makeId: IO[String] = IO { UUID.randomUUID().toString }
 
-    private val mountainHut = HutWithId("123", "Mountain Hut")
-    val huts = ListBuffer[HutWithId](mountainHut)
-    val makeId: IO[String] = IO { UUID.randomUUID().toString }
+    def getHut(id: String): IO[Option[HutWithId]] =
+      IO  { huts.find(_.id == id) }
 
-    def getHut(listingId: String): IO[Option[HutWithId]] =
-      IO  { huts.find(_.id == listingId) }
-
-    def addHut(listing: Hut): IO[String] =
+    def addHut(hut: Hut): IO[String] =
       for {
         uuid <- makeId
-        _ <- IO { huts += hutWithId(listing, uuid) }
+        _ <- IO { huts += hutWithId(hut, uuid) }
       } yield uuid
 
-    def updateHut(listingWithId: HutWithId): IO[Option[HutWithId]] =
+    def updateHut(hutWithId: HutWithId): IO[Unit] = {
       for {
-        hut <- IO { huts.find(_.id == listingWithId.id) }
-        _ <- IO { hut.map(h => huts -= h )}
-      } yield hut
+        _ <- IO { huts -= hutWithId }
+        _ <- IO { huts += hutWithId }
+      } yield()
+    }
 
-    def deleteHut(listingId: String): IO[Unit] =
-      IO {huts.filterNot(_.id == listingId)}
+    def deleteHut(hutId: String): IO[Unit] =
+      IO {huts.filterNot(_.id == hutId)}
 
     def hutWithId(hut: Hut, id: String): HutWithId =
       HutWithId(id, hut.name)
-  }
-
-
-
+}
+object HutRepository {
+  def empty: IO[HutRepository] = IO{new HutRepository(ListBuffer())}
+}
