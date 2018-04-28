@@ -9,7 +9,6 @@ import org.http4s.dsl.Http4sDsl
 import org.http4s.server.blaze.BlazeBuilder
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.collection.mutable.ListBuffer
 
 import entities.Hut
 import entities._
@@ -27,7 +26,6 @@ object HutServer extends StreamApp[IO] with Http4sDsl[IO] {
   val HUTS = "huts"
 
   val service = HttpService[IO] {
-    
 
     case GET -> Root / HUTS / hutId =>
       hutRepo.getHut(hutId)
@@ -44,7 +42,6 @@ object HutServer extends StreamApp[IO] with Http4sDsl[IO] {
     case DELETE -> Root / HUTS / hutId =>
       hutRepo.deleteHut(hutId)
         .flatMap(_ => NoContent())
-
   }
 
   def stream(args: List[String], requestShutdown: IO[Unit]) =

@@ -28,7 +28,13 @@ final class HutRepository(private val huts: ListBuffer[HutWithId]) {
     }
 
     def deleteHut(hutId: String): IO[Unit] =
-      IO {huts.filterNot(_.id == hutId)}
+      for {
+        h <- IO {huts.find(_.id == hutId).map{
+          h =>  IO {huts -= h }
+        }
+        }
+      } yield ()
+      
 
     def hutWithId(hut: Hut, id: String): HutWithId =
       HutWithId(id, hut.name)
