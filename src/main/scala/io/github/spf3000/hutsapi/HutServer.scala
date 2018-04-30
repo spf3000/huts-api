@@ -19,7 +19,7 @@ object HutServer extends StreamApp[IO] with Http4sDsl[IO] {
 
   implicit val decoder1 = jsonOf[IO, HutWithId]
 
-  implicit val endcoder = jsonEncoderOf[IO, HutWithId]
+  implicit val encoder = jsonEncoderOf[IO, HutWithId]
 
   val hutRepo = HutRepository.empty.unsafeRunSync()
 
