@@ -5,7 +5,7 @@ import cats.effect.IO
 import io.circe.generic.auto._
 import io.circe.syntax._
 import io.circe.Json
-import io.github.spf3000.hutsapi.entities.{Address, Contact, Hut, Location}
+import io.github.spf3000.hutsapi.entities._
 import org.http4s.circe._
 import org.http4s._
 import org.http4s.implicits._
@@ -21,90 +21,85 @@ import scala.io.Source
 
 class HutSpec extends org.specs2.mutable.Specification {
 
-  "Get Listings" >> {
-    "return 200" >> {
-      getListingsReturns200()
-    }
-    "return listings" >> {
-      getListingsReturnsListing()
-    }
-  }
+  val hutWthId = HutWithId("123", "Mountain Hut")
+  val hut = Hut("Mountain Hut")
 
-  "Post Listings" >> {
+//  "Get Huts" >> {
+//    "return 200" >> {
+//      getHutsReturns200()
+//    }
+//    "return huts" >> {
+//      getHutsReturnsHut()
+//    }
+//  }
+
+  "Post Huts" >> {
     "return 201" >> {
-      postListingReturns201()
-    }
-    "return id" >> {
-      postListingsReturnsListing()
+      postHutReturns201()
     }
   }
 
-  "Put Listings" >> {
+  "Put Huts" >> {
+    "return 200" >> {
+      putHutReturns200()
+    }
+  }
+
+  "Delete Huts" >> {
     "return 204" >> {
-      putListingReturns204()
-    }
-  }
-
-  "Delete Listings" >> {
-    "return 204" >> {
-      deleteListingReturns204()
+      deleteHutReturns204()
     }
   }
 
 
-  private[this] val retGetListing: Response[IO] = {
-    val getLstngs = Request[IO](Method.GET, Uri.uri("/listings/123"))
+  private[this] val retGetHut: Response[IO] = {
+    val getLstngs = Request[IO](Method.GET, Uri.uri("/huts/123"))
     HutServer.service.orNotFound(getLstngs).unsafeRunSync()
   }
 
-  private[this] def getListingsReturns200(): MatchResult[Status] =
-    retGetListing.status must beEqualTo(Status.Ok)
+  private[this] def getHutsReturns200(): MatchResult[Status] =
+    retGetHut.status must beEqualTo(Status.Ok)
 
-  private[this] def getListingsReturnsListing(): MatchResult[String] = {
-    val listing =  Json.fromString(Source.fromResource("idListing.json").getLines().mkString("").stripPrefix(" ").stripSuffix(" "))
-    retGetListing.as[String].unsafeRunSync() must beEqualTo(listing.asString.get)
+  private[this] def getHutsReturnsHut(): MatchResult[String] = {
+    val hut =  Json.fromString(Source.fromResource("idHut.json").getLines().mkString("").stripPrefix(" ").stripSuffix(" "))
+    retGetHut.as[String].unsafeRunSync() must beEqualTo(hut.asString.get)
   }
 
-  private[this] val retPostListing: Response[IO] =  {
-    val postLstngs = Request[IO](Method.POST, Uri.uri("/listings")).withBody(listing.asJson).unsafeRunSync()
+  private[this] val retPostHut: Response[IO] =  {
+    val postLstngs = Request[IO](Method.POST, Uri.uri("/huts")).withBody(hut.asJson).unsafeRunSync()
     HutServer.service.orNotFound(postLstngs).unsafeRunSync()
   }
 
-  private[this] def postListingReturns201(): MatchResult[Status] =
-    retPostListing.status must beEqualTo(Status.Created)
+  private[this] def postHutReturns201(): MatchResult[Status] =
+    retPostHut.status must beEqualTo(Status.Created)
 
-  private[this] def postListingsReturnsListing(): MatchResult[String] = {
-    val listing =  Json.fromString(Source.fromResource("idListing.json").getLines().mkString("").stripPrefix(" ").stripSuffix(" "))
-    retPostListing.as[String].unsafeRunSync() must beEqualTo("""{"id":"1234"}""")
-  }
-
-  private[this] def retPutListing: Response[IO] = {
-    val putLsting = Request[IO](Method.PUT, Uri.uri("/listings")).withBody(listing.asJson).unsafeRunSync()
+  private[this] def retPutHut: Response[IO] = {
+    val putLsting = Request[IO](Method.PUT, Uri.uri("/huts")).withBody(hutWthId.asJson).unsafeRunSync()
     HutServer.service.orNotFound(putLsting).unsafeRunSync()
   }
 
-  private[this] def putListingReturns204(): MatchResult[Status] =
-    retPutListing.status must beEqualTo(Status.NoContent)
+  private[this] def putHutReturns200(): MatchResult[Status] =
+    retPutHut.status must beEqualTo(Status.Ok)
 
 
-  private[this] def retDeleteListing: Response[IO] = {
-    val delLstng = Request[IO](Method.DELETE, Uri.uri("/listings/1234"))
+  private[this] def retDeleteHut: Response[IO] = {
+    val delLstng = Request[IO](Method.DELETE, Uri.uri("/huts/1234"))
     HutServer.service.orNotFound(delLstng).unsafeRunSync()
   }
 
-  private[this] def deleteListingReturns204(): MatchResult[Status] =
-    retDeleteListing.status must beEqualTo(Status.NoContent)
+  private[this] def deleteHutReturns204(): MatchResult[Status] =
+    retDeleteHut.status must beEqualTo(Status.NoContent)
 
-  private[this] val retPostThenGetListing: Response[IO] =  {
+  private[this] val retPostThenGetHut: Response[IO] =  {
     val requests = IO {
-      Request[IO](Method.POST, Uri.uri("/listings")).withBody(listing.asJson).unsafeRunSync()
-      Request[IO](Method.GET, Uri.uri("/listings/1234"))
+      Request[IO](Method.POST, Uri.uri("/huts")).withBody(hutWthId.asJson).unsafeRunSync()
+      Request[IO](Method.GET, Uri.uri("/huts/1234"))
     }
     HutServer.service.orNotFound(requests.unsafeRunSync()).unsafeRunSync()
   }
 
-  private[this] def postThenGetListingReturns204  =
-    retPostThenGetListing.status must beEqualTo(Status.Ok)
+  private[this] def postThenGetHutReturns204  =
+    retPostThenGetHut.status must beEqualTo(Status.Ok)
 
 
 
