@@ -27,7 +27,7 @@ class HutSpec extends org.specs2.mutable.Specification {
 //  "Get Huts" >> {
 //    "return 200" >> {
 //      getHutsReturns200()
-//    }
+//}
 //    "return huts" >> {
 //      getHutsReturnsHut()
 //    }
@@ -56,6 +56,17 @@ class HutSpec extends org.specs2.mutable.Specification {
     val getLstngs = Request[IO](Method.GET, Uri.uri("/huts/123"))
     HutServer.service.orNotFound(getLstngs).unsafeRunSync()
   }
+  
+  private[this] val retPostGetHut: Response[IO] = {
+    val postLstngs = Request[IO](Method.POST, Uri.uri("/huts")).withBody(hut.asJson).unsafeRunSync()
+    val getLstngs = Request[IO](Method.GET, Uri.uri("/huts"))
+    HutServer.service.orNotFound(postLstngs).flatMap(f: (Response[IO]) => IO[B])
+    
+
+    
+  }
+
+  
 
   private[this] def getHutsReturns200(): MatchResult[Status] =
     retGetHut.status must beEqualTo(Status.Ok)

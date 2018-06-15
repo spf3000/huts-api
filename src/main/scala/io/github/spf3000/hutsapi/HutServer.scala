@@ -2,6 +2,7 @@ package io.github.spf3000.hutsapi
 
 import cats.effect.IO
 import fs2.StreamApp
+import fs2.Stream
 import io.circe.generic.auto._
 import org.http4s._
 import org.http4s.circe._
@@ -21,18 +22,18 @@ object HutServer extends StreamApp[IO] with Http4sDsl[IO] {
 
   implicit val encoder = jsonEncoderOf[IO, HutWithId]
 
-  val hutRepo = HutRepository.empty.unsafeRunSync()
-
   val HUTS = "huts"
 
-  val service = HttpService[IO] {
+  def service(hutRepo: HutRepository) = HttpService[IO] {
 
     case GET -> Root / HUTS / hutId =>
       hutRepo.getHut(hutId)
           .flatMap(_.fold(NotFound())(Ok(_)))
 
     case req @ POST -> Root / HUTS =>
-         req.as[Hut].flatMap(hutRepo.addHut).flatMap(Created(_))
+         req.as[Hut]
+           .flatMap(hutRepo.addHut)
+           .flatMap(Created(_))
 
     case req @ PUT -> Root / HUTS =>
       req.as[HutWithId]
@@ -45,8 +46,10 @@ object HutServer extends StreamApp[IO] with Http4sDsl[IO] {
   }
 
   def stream(args: List[String], requestShutdown: IO[Unit]) =
+    Stream.eval(HutRepository.empty).flatMap { hutRepo =>
     BlazeBuilder[IO]
       .bindHttp(8080, "0.0.0.0")
-      .mountService(service, "/")
+      .mountService(service(hutRepo), "/")
       .serve
+    }
 }

@@ -34,7 +34,7 @@ final class HutRepository(private val huts: ListBuffer[HutWithId]) {
         }
         }
       } yield ()
-      
+
 
     def hutWithId(hut: Hut, id: String): HutWithId =
       HutWithId(id, hut.name)
