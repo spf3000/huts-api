@@ -54,19 +54,11 @@ class HutSpec extends org.specs2.mutable.Specification {
 
   private[this] val retGetHut: Response[IO] = {
     val getLstngs = Request[IO](Method.GET, Uri.uri("/huts/123"))
-    HutServer.service.orNotFound(getLstngs).unsafeRunSync()
-  }
-  
-  private[this] val retPostGetHut: Response[IO] = {
-    val postLstngs = Request[IO](Method.POST, Uri.uri("/huts")).withBody(hut.asJson).unsafeRunSync()
-    val getLstngs = Request[IO](Method.GET, Uri.uri("/huts"))
-    HutServer.service.orNotFound(postLstngs).flatMap(f: (Response[IO]) => IO[B])
-    
-
-    
+    server(getLstngs).unsafeRunSync()
   }
 
-  
+
+  def server(request: Request[IO]) = HutServer.service(HutRepository.empty.unsafeRunSync).orNotFound(request)
 
   private[this] def getHutsReturns200(): MatchResult[Status] =
     retGetHut.status must beEqualTo(Status.Ok)
@@ -78,7 +70,7 @@ class HutSpec extends org.specs2.mutable.Specification {
 
   private[this] val retPostHut: Response[IO] =  {
     val postLstngs = Request[IO](Method.POST, Uri.uri("/huts")).withBody(hut.asJson).unsafeRunSync()
-    HutServer.service.orNotFound(postLstngs).unsafeRunSync()
+    server(postLstngs).unsafeRunSync()
   }
 
   private[this] def postHutReturns201(): MatchResult[Status] =
@@ -86,7 +78,7 @@ class HutSpec extends org.specs2.mutable.Specification {
 
   private[this] def retPutHut: Response[IO] = {
     val putLsting = Request[IO](Method.PUT, Uri.uri("/huts")).withBody(hutWthId.asJson).unsafeRunSync()
-    HutServer.service.orNotFound(putLsting).unsafeRunSync()
+    server(putLsting).unsafeRunSync()
   }
 
   private[this] def putHutReturns200(): MatchResult[Status] =
@@ -95,7 +87,7 @@ class HutSpec extends org.specs2.mutable.Specification {
 
   private[this] def retDeleteHut: Response[IO] = {
     val delLstng = Request[IO](Method.DELETE, Uri.uri("/huts/1234"))
-    HutServer.service.orNotFound(delLstng).unsafeRunSync()
+    server(delLstng).unsafeRunSync()
   }
 
   private[this] def deleteHutReturns204(): MatchResult[Status] =
@@ -106,12 +98,11 @@ class HutSpec extends org.specs2.mutable.Specification {
       Request[IO](Method.POST, Uri.uri("/huts")).withBody(hutWthId.asJson).unsafeRunSync()
       Request[IO](Method.GET, Uri.uri("/huts/1234"))
     }
-    HutServer.service.orNotFound(requests.unsafeRunSync()).unsafeRunSync()
+    server(requests.unsafeRunSync()).unsafeRunSync()
   }
 
   private[this] def postThenGetHutReturns204  =
     retPostThenGetHut.status must beEqualTo(Status.Ok)
-
 
 
 }

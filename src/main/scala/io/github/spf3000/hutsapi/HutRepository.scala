@@ -11,6 +11,7 @@ import io.github.spf3000.hutsapi.entities._
 final class HutRepository(private val huts: ListBuffer[HutWithId]) {
   val makeId: IO[String] = IO { UUID.randomUUID().toString }
 
+
     def getHut(id: String): IO[Option[HutWithId]] =
       IO  { huts.find(_.id == id) }
 
