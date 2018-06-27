@@ -1,44 +1,44 @@
 package io.github.spf3000.hutsapi
 
 import java.util.UUID
-
+import cats.Monad
 import scala.collection.mutable.ListBuffer
-
+import cats.FlatMap
+import cats.implicits._
 import cats.effect.IO
 import io.github.spf3000.hutsapi.entities._
 
 
-final class HutRepository(private val huts: ListBuffer[HutWithId]) {
-  val makeId: IO[String] = IO { UUID.randomUUID().toString }
+final case class HutRepository[F[_]](private val huts: ListBuffer[HutWithId])(implicit m: Monad[F]) {
+  val makeId: F[String] = m.point { UUID.randomUUID().toString }
 
 
-    def getHut(id: String): IO[Option[HutWithId]] =
-      IO  { huts.find(_.id == id) }
+    def getHut(id: String): F[Option[HutWithId]] =
+      m.point  { huts.find(_.id == id) }
 
-    def addHut(hut: Hut): IO[String] =
+    def addHut(hut: Hut): F[String] =
       for {
         uuid <- makeId
-        _ <- IO { huts += hutWithId(hut, uuid) }
+        _ <- m.point { huts += hutWithId(hut, uuid) }
       } yield uuid
 
-    def updateHut(hutWithId: HutWithId): IO[Unit] = {
+    def updateHut(hutWithId: HutWithId): F[Unit] = {
       for {
-        _ <- IO { huts -= hutWithId }
-        _ <- IO { huts += hutWithId }
+        _ <- m.point { huts -= hutWithId }
+        _ <- m.point { huts += hutWithId }
       } yield()
     }
 
-    def deleteHut(hutId: String): IO[Unit] =
+    def deleteHut(hutId: String): F[Unit] =
       for {
-        h <- IO {huts.find(_.id == hutId).map(removeHut)
-        }
+        h <- m.point {huts.find(_.id == hutId).map(removeHut) }
       } yield ()
 
-    def removeHut(hut: HutWithId): IO[Unit] = IO { huts -= hut }
+    def removeHut(hut: HutWithId): F[Unit] = m.point { huts -= hut }
 
     def hutWithId(hut: Hut, id: String): HutWithId =
       HutWithId(id, hut.name)
 }
 object HutRepository {
-  def empty: IO[HutRepository] = IO{new HutRepository(ListBuffer())}
+  def empty[F[_]](implicit m: Monad[F]): IO[HutRepository[F]] = IO{new HutRepository[F](ListBuffer())}
 }

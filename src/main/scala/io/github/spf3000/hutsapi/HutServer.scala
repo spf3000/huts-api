@@ -1,13 +1,20 @@
 package io.github.spf3000.hutsapi
 
 import cats.effect.IO
+import cats.Monad
+import cats.FlatMap
+import cats.implicits._
+import cats.effect._
 import fs2.StreamApp
 import fs2.Stream
 import io.circe.generic.auto._
+import io.circe.syntax._
+
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
 import org.http4s.server.blaze.BlazeBuilder
+import org.http4s.dsl.io._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -16,37 +23,34 @@ import entities._
 
 object HutServer extends StreamApp[IO] with Http4sDsl[IO] {
 
-  implicit val decoder = jsonOf[IO, Hut]
-
-  implicit val decoder1 = jsonOf[IO, HutWithId]
-
-  implicit val encoder = jsonEncoderOf[IO, HutWithId]
-
   val HUTS = "huts"
 
-  def service(hutRepo: HutRepository) = HttpService[IO] {
+  def service[F[_]](hutRepo: HutRepository[F])(implicit F: Effect[F]) = HttpService[F] {
 
     case GET -> Root / HUTS / hutId =>
       hutRepo.getHut(hutId)
-          .flatMap(_.fold(NotFound())(Ok(_)))
+          .flatMap{
+      case Some(hut) => Response(status = Status.Ok).withBody(hut.asJson)
+      case None      => F.pure(Response(status = Status.NotFound))
+    }
 
     case req @ POST -> Root / HUTS =>
-         req.as[Hut]
+         req.decodeJson[Hut]
            .flatMap(hutRepo.addHut)
-           .flatMap(Created(_))
+           .flatMap(hut => Response(status = Status.Created).withBody(hut.asJson))
 
     case req @ PUT -> Root / HUTS =>
-      req.as[HutWithId]
+      req.decodeJson[HutWithId]
         .flatMap(hutRepo.updateHut)
-          .flatMap(Ok(_))
+        .flatMap(_ => F.pure(Response(status = Status.Ok)))
 
     case DELETE -> Root / HUTS / hutId =>
       hutRepo.deleteHut(hutId)
-        .flatMap(_ => NoContent())
+        .flatMap(_ => F.pure(Response(status = Status.NoContent)))
   }
 
   def stream(args: List[String], requestShutdown: IO[Unit]) =
-    Stream.eval(HutRepository.empty).flatMap { hutRepo =>
+    Stream.eval(HutRepository.empty[IO]).flatMap { hutRepo =>
     BlazeBuilder[IO]
       .bindHttp(8080, "0.0.0.0")
       .mountService(service(hutRepo), "/")
