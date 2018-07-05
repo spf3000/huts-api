@@ -63,8 +63,7 @@ class HutSpec extends Specification {
     retGetHut.status must beEqualTo(Status.Ok)
 
   private[this] def getHutsReturnsHut(): MatchResult[String] = {
-//    val hut =  Json.fromString(Source.fromResource("idHut.json").getLines().mkString("").stripPrefix(" ").stripSuffix(" "))
-    val hut =  Json.fromString("""{"id":"123","name":"Mountain Hut"}""".stripPrefix(" ").stripSuffix(" "))
+    val hut =  Json.fromString("""{"id":"123","name":"Mountain Hut"}""")
     retGetHut.as[String].unsafeRunSync() must beEqualTo(hut.asString.get)
   }
 
