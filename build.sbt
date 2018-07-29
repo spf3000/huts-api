@@ -17,7 +17,12 @@ lazy val root = (project in file("."))
       "io.circe"        %% "circe-literal"       % CirceVersion,
       "org.http4s"      %% "http4s-dsl"          % Http4sVersion,
       "org.specs2"      %% "specs2-core"         % Specs2Version % "test",
+      "com.slamdata" 	%% "matryoshka-core"	 % "0.18.3",
       "ch.qos.logback"  %  "logback-classic"     % LogbackVersion
     )
   )
 
+resolvers += Resolver.sonatypeRepo("releases")
+
+addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.7")
+libraryDependencies += "org.typelevel" %% "spire" % "0.14.1"
