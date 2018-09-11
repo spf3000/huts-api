@@ -32,6 +32,7 @@ final case class HutRepository[F[_]](private val huts: ListBuffer[HutWithId])(im
       e.delay { huts.find(_.id == hutId).foreach(h => huts -= h) }
 
 
+
     def hutWithId(hut: Hut, id: String): HutWithId =
       HutWithId(id, hut.name)
 }
