@@ -1,0 +1,130 @@
+Build a CRUD/REST API with http4s
+http4s is an HTTP library for Scala. http4s has good documentation including a tutorial. However, the tutorial only covers the most basic of applications — and if you are not super comfortable with cats-IO it might be difficult to extend it to real-life. At least it was for me! We are going to take it one step further and implement a very simple CRUD (Create Read Update Delete) web-server application. Hopefully this should give you an idea of how it can be useful
+All the code for this demo can be found on github.
+Why http4s? 
+The latest stable version — 0.18 is built with the cats-effect IO monad in mind. If that means something to great -read on! If not checkout my introduction to purity in programming and the IO monad, and read on. This monadic marvel will allow us to construct a purely functional API with an absolute minimum of pain. You can use different web server implementations, but we are going to use the http4s native server blaze.
+The App.
+We are going to keep things simple. The object we are are going to be using is a Hut:
+case class Hut(name: String)
+Our hut class has one field: name. We are also going to have a HutWithId:
+case class HutWithId(id: String, name: String)
+For simplicity we are going to store our hot objects in memory, rather than use a database.
+Set up the App.
+We are going to use the template from http4s to bootstrap our app. Run:
+$ sbt -sbt-version 1.1.1 new http4s/http4s.g8
+… and answer the prompts — see http://http4s.org/v0.18/ for further guidance.
+All going well you should be able to run your app and make a simple request like: 
+$ curl -i http://localhost:8080/hello/world
+Build the App. Storage layer.
+We are going to add CRUD functionality: The HutRepository is going to imitate storage and retrieval of huts: 
+package io.github.spf3000.hutsapi
+
+import java.util.UUID
+
+import cats.effect.IO
+import io.github.spf3000.listingsapi.entities._
+
+import scala.collection.mutable.ListBuffer
+
+  object HutRepository {
+    
+    private val mountainHut = HutWithId("123", "Mountain Hut")
+    val huts = ListBuffer[HutWithId](mountainHut)
+    val makeId: IO[String] = IO { UUID.randomUUID().toString }
+
+    def getHut(listingId: String): IO[Option[HutWithId]] =
+      IO  { huts.find(_.id == listingId) }
+
+    def addHut(listing: Hut): IO[String] =
+      for {
+        uuid <- makeId
+        _ <- IO { huts += hutWithId(listing, uuid) }
+      } yield uuid
+
+    def updateHut(listingWithId: HutWithId): IO[Option[HutWithId]] =
+      for {
+        hut <- IO { huts.find(_.id == listingWithId.id) }
+        _ <- IO { hut.map(h => huts -= h )}
+      } yield hut
+
+    def deleteHut(listingId: String): IO[Unit] =
+      IO {huts.filterNot(_.id == listingId)}
+
+    def hutWithId(hut: Hut, id: String): HutWithId =
+      HutWithId(id, hut.name)
+  }
+Ok so you might notice that if you forget about all the IO’s it looks very impure — I am mutating state in place, (with the += and -=) and makeId generates a random number — also not referentially transparent. But all these functions are pure! In fact things are so pure, I don’t even have to worry about whether Scala is going to store thing (memoizations), i.e. observe: 
+val makeId: IO[String] = IO { UUID.randomUUID().toString }
+this could be a def — it actually doesn’t matter — with IO you can just use defs when you need arguments and vals when you don’t, as you have control over when things are evaluated.
+Build the App. Http layer.
+In the http layer we are going to call our repository methods and return some of the pre-defined responses that http4s gives us such as OK and NotFound
+package io.github.spf3000.hutsapi
+
+import cats.effect.IO
+import fs2.StreamApp
+import io.circe.generic.auto._
+import org.http4s._
+import org.http4s.circe._
+import org.http4s.dsl.Http4sDsl
+import org.http4s.server.blaze.BlazeBuilder
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import entities.Hut
+
+import entities._
+import HutRepository._
+
+object HutServer extends StreamApp[IO] with Http4sDsl[IO] {
+
+  implicit val decoder = jsonOf[IO, Hut]
+
+  implicit val decoder1 = jsonOf[IO, HutWithId]
+
+  implicit val endcoder = jsonEncoderOf[IO, HutWithId]
+
+  val HUTS = "huts"
+
+  val service = HttpService[IO] {
+
+    case GET -> Root / HUTS / hutId =>
+      getHut(hutId)
+          .flatMap(_.fold(NotFound())(Ok(_)))
+
+    case req @ POST -> Root / HUTS =>
+         req.as[Hut].flatMap(addHut).flatMap(Ok(_))
+
+    case req @ PUT -> Root / HUTS =>
+      req.as[HutWithId]
+        .flatMap(updateHut)
+          .flatMap(_.fold(NotFound())(Ok(_)))
+
+    case DELETE -> Root / HUTS / hutId =>
+      deleteHut(hutId)
+        .flatMap(_ => Ok())
+
+  }
+
+  def stream(args: List[String], requestShutdown: IO[Unit]) =
+    BlazeBuilder[IO]
+      .bindHttp(8080, "0.0.0.0")
+      .mountService(service, "/")
+      .serve
+}
+Use the App.
+Open a terminal window, cd into the top directory of the app and type: 
+sbt run
+in another terminal: 
+$ curl -i http://localhost:8080/huts/123
+Which will give a 200 (OK) response and the json of our hut: 
+HTTP/1.1 200 OK
+Content-Type: application/json
+Date: Tue, 20 Mar 2018 13:57:59 GMT
+Content-Length: 34
+{"id":"123","name":"Mountain Hut"}
+To Post a new hut: 
+curl -v -H "Content-Type: application/json" -X POST http://localhost:8080/huts -d '{"name":"River Hut"}'
+(this should give you back the id of your newly created hut).
+Update a hut:
+curl -v -H "Content-Type: application/json" -X PUT http://localhost:8080/huts/123 -d '{"id":"123","name":"Mountain Hut"}'
+and finally delete a hut: 
+curl -v -X DELETE http://localhost:8080/huts/123

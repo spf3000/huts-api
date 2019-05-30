@@ -47,29 +47,28 @@ class HutSpec extends Specification {
   }
 
 
-  val hutWithId = HutWithId("123", "Mountain Hut")
+  val hutWithId = HutWithId("123", Hut("Mountain Hut"))
   val hut = Hut("Mountain Hut")
 
   val hutRepo = HutRepository[IO](ListBuffer(hutWithId))
 
-  def testService(): HttpService[IO] = HutServer.service[IO](hutRepo)
 
   private[this] val retGetHut: Response[IO] = {
     val getLstngs = Request[IO](Method.GET, Uri.uri("/huts/123"))
-    testService.orNotFound(getLstngs).unsafeRunSync()
+    HutRoutes.hutRoutes(hutRepo).orNotFound(getLstngs).unsafeRunSync
   }
 
   private[this] def getHutsReturns200(): MatchResult[Status] =
     retGetHut.status must beEqualTo(Status.Ok)
 
   private[this] def getHutsReturnsHut(): MatchResult[String] = {
-    val hut =  Json.fromString("""{"id":"123","name":"Mountain Hut"}""")
+    val hut =  Json.fromString("""{"id":"123","hut":{"name":"Mountain Hut"}}""")
     retGetHut.as[String].unsafeRunSync() must beEqualTo(hut.asString.get)
   }
 
   private[this] val retPostHut: Response[IO] =  {
     val postLstngs = Request[IO](Method.POST, Uri.uri("/huts")).withBody(hut.asJson).unsafeRunSync()
-    testService().orNotFound(postLstngs).unsafeRunSync()
+    HutRoutes.hutRoutes(hutRepo).orNotFound(postLstngs).unsafeRunSync
   }
 
   private[this] def postHutReturns201(): MatchResult[Status] =
@@ -77,7 +76,7 @@ class HutSpec extends Specification {
 
   private[this] def retPutHut: Response[IO] = {
     val putLsting = Request[IO](Method.PUT, Uri.uri("/huts")).withBody(hutWithId.asJson).unsafeRunSync()
-    testService().orNotFound(putLsting).unsafeRunSync()
+    HutRoutes.hutRoutes(hutRepo).orNotFound(putLsting).unsafeRunSync()
   }
 
   private[this] def putHutReturns200(): MatchResult[Status] =
@@ -86,7 +85,7 @@ class HutSpec extends Specification {
 
   private[this] def retDeleteHut: Response[IO] = {
     val delLstng = Request[IO](Method.DELETE, Uri.uri("/huts/1234"))
-    testService.orNotFound(delLstng).unsafeRunSync()
+    HutRoutes.hutRoutes(hutRepo).orNotFound(delLstng).unsafeRunSync()
   }
 
   private[this] def deleteHutReturns204(): MatchResult[Status] =
