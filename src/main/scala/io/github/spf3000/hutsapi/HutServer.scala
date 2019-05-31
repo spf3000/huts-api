@@ -14,7 +14,6 @@ object HutServer {
 
   def stream[F[_]: ConcurrentEffect: Timer](hutRepo: HutRepository[F]) = {
 
-
     val httpApp = (HutRoutes.hutRoutes[F](hutRepo)).orNotFound
 
         for {

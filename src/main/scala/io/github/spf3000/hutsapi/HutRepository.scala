@@ -3,7 +3,6 @@ package io.github.spf3000.hutsapi
 import java.util.UUID
 import cats.effect._
 import scala.collection.mutable.ListBuffer
-import cats.FlatMap
 import cats.implicits._
 import io.github.spf3000.hutsapi.entities._
 
