@@ -47,28 +47,36 @@ class HutSpec extends Specification {
   }
 
 
-  val hutWithId = HutWithId("123", Hut("Mountain Hut"))
+  val hutWithId = ("123", Hut("Mountain Hut"))
   val hut = Hut("Mountain Hut")
 
-  val hutRepo = HutRepository[IO](ListBuffer(hutWithId))
+  val hutStore =
+      for {
+        store <- InMemoryStore.LBStore.empty[IO,(String,Hut)]
+        _ <- store.add(hutWithId)
+      } yield store
 
+  val hutRepo = Repository.impl(hutStore.unsafeRunSync)
+
+
+  val hutRoutes = HutRoutes.hutRoutes("huts", hutRepo)
 
   private[this] val retGetHut: Response[IO] = {
     val getLstngs = Request[IO](Method.GET, Uri.uri("/huts/123"))
-    HutRoutes.hutRoutes(hutRepo).orNotFound(getLstngs).unsafeRunSync
+    hutRoutes.orNotFound(getLstngs).unsafeRunSync
   }
 
   private[this] def getHutsReturns200(): MatchResult[Status] =
     retGetHut.status must beEqualTo(Status.Ok)
 
   private[this] def getHutsReturnsHut(): MatchResult[String] = {
-    val hut =  Json.fromString("""{"id":"123","hut":{"name":"Mountain Hut"}}""")
+    val hut =  Json.fromString("""["123",{"name":"Mountain Hut"}]""")
     retGetHut.as[String].unsafeRunSync() must beEqualTo(hut.asString.get)
   }
 
   private[this] val retPostHut: Response[IO] =  {
     val postLstngs = Request[IO](Method.POST, Uri.uri("/huts")).withBody(hut.asJson).unsafeRunSync()
-    HutRoutes.hutRoutes(hutRepo).orNotFound(postLstngs).unsafeRunSync
+    hutRoutes.orNotFound(postLstngs).unsafeRunSync
   }
 
   private[this] def postHutReturns201(): MatchResult[Status] =
@@ -76,7 +84,7 @@ class HutSpec extends Specification {
 
   private[this] def retPutHut: Response[IO] = {
     val putLsting = Request[IO](Method.PUT, Uri.uri("/huts")).withBody(hutWithId.asJson).unsafeRunSync()
-    HutRoutes.hutRoutes(hutRepo).orNotFound(putLsting).unsafeRunSync()
+    hutRoutes.orNotFound(putLsting).unsafeRunSync()
   }
 
   private[this] def putHutReturns200(): MatchResult[Status] =
@@ -85,11 +93,10 @@ class HutSpec extends Specification {
 
   private[this] def retDeleteHut: Response[IO] = {
     val delLstng = Request[IO](Method.DELETE, Uri.uri("/huts/1234"))
-    HutRoutes.hutRoutes(hutRepo).orNotFound(delLstng).unsafeRunSync()
+    hutRoutes.orNotFound(delLstng).unsafeRunSync()
   }
 
   private[this] def deleteHutReturns204(): MatchResult[Status] =
     retDeleteHut.status must beEqualTo(Status.NoContent)
-
 
 }

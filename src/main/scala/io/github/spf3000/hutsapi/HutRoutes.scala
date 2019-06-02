@@ -10,39 +10,39 @@ import org.http4s._
 import org.http4s.circe._
 import io.circe.generic.auto._
 import io.circe.syntax._
+import io.circe.Encoder
+import io.circe.Decoder
 
 object HutRoutes {
 
-  val hutsPath = "huts"
 
-  def hutRoutes[F[_]](hutRepo: HutRepository[F])
-    (implicit F: Sync[F]) = {
+  def hutRoutes[F[_],A](basePath: String, R: Repository[F,A])
+    (implicit F: Sync[F], E: Encoder[A], D: Decoder[A]) = {
     val dsl = new Http4sDsl[F] {}
     import dsl._
     HttpRoutes.of[F] {
-      case GET -> Root / hutsPath / hutId => {
-        hutRepo.getHut(hutId)
+      case GET -> Root / basePath / id => {
+        R.get(id)
           .flatMap(_ match {
-            case Some(hut) => Ok(hut.asJson)
-            case None      => NotFound(hutId)
+            case Some(a) => Ok(a.asJson)
+            case None    => NotFound(id)
           })
         }
 
-      case req @ POST -> Root / hutsPath =>
+      case req @ POST -> Root / basePath =>
         req
-          .decodeJson[Hut]
-          .flatMap(hutRepo.addHut)
-          .flatMap(hut => Created(hut))
+          .decodeJson[A]
+          .flatMap(R.insert)
+          .flatMap(Created(_))
 
-      case req @ PUT -> Root / hutsPath =>
+      case req @ PUT -> Root / basePath =>
         req
-          .decodeJson[HutWithId]
-          .flatMap(hutRepo.updateHut)
+          .decodeJson[(String, A)]
+          .flatMap(R.update _)
           .map(_ => Response(status = Ok))
 
-      case DELETE -> Root / hutsPath / hutId =>
-        hutRepo
-          .deleteHut(hutId)
+      case DELETE -> Root / basePath / id =>
+        R.delete(_._1 == id)
           .map(_ => Response(status = NoContent))
     }
   }
