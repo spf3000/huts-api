@@ -16,7 +16,7 @@ import io.circe.Decoder
 object HutRoutes {
 
 
-  def hutRoutes[F[_],A](basePath: String, R: Repository[F,A])
+  def hutRoutes[L[_],F[_],A](basePath: String, R: Repository[L,F,A])
     (implicit F: Sync[F], E: Encoder[A], D: Decoder[A]) = {
     val dsl = new Http4sDsl[F] {}
     import dsl._
