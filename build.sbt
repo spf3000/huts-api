@@ -9,19 +9,17 @@ lazy val root = (project in file("."))
     name := "huts-api",
     version := "0.0.1-SNAPSHOT",
     scalaVersion := "2.12.8",
-    scalacOptions ++= Seq("-Ypartial-unification"),
+    scalacOptions += "-Ypartial-unification",
     resolver += Resolver.sonatypeRepo("releases"),
     addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.7"),
     libraryDependencies ++= Seq(
-      "org.http4s"      %% "http4s-blaze-server" % Http4sVersion,
-      "org.http4s"      %% "http4s-blaze-client" % Http4sVersion,
-      "org.http4s"      %% "http4s-circe"        % Http4sVersion,
-      "io.circe"        %% "circe-generic"       % CirceVersion,
-      "io.circe"        %% "circe-literal"       % CirceVersion,
-      "org.http4s"      %% "http4s-dsl"          % Http4sVersion,
-      "org.specs2"      %% "specs2-core"         % Specs2Version % "test",
-      "ch.qos.logback"  %  "logback-classic"     % LogbackVersion
+      "org.http4s" %% "http4s-blaze-server" % Http4sVersion,
+      "org.http4s" %% "http4s-blaze-client" % Http4sVersion,
+      "org.http4s" %% "http4s-circe" % Http4sVersion,
+      "io.circe" %% "circe-generic" % CirceVersion,
+      "io.circe" %% "circe-literal" % CirceVersion,
+      "org.http4s" %% "http4s-dsl" % Http4sVersion,
+      "org.specs2" %% "specs2-core" % Specs2Version % "test",
+      "ch.qos.logback" % "logback-classic" % LogbackVersion
     )
   )
-
-

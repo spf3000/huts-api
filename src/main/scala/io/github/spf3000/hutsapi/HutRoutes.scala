@@ -8,16 +8,14 @@ import cats.implicits._
 import entities._
 import org.http4s._
 import org.http4s.circe._
-import io.circe.generic.auto._
 import io.circe.syntax._
 import io.circe.Encoder
 import io.circe.Decoder
 
 object HutRoutes {
 
-
-  def hutRoutes[L[_],F[_],A](basePath: String, R: Repository[L,F,A])
-    (implicit F: Sync[F], E: Encoder[A], D: Decoder[A]) = {
+  def hutRoutes[L[_], F[_]: Sync, A: Encoder: Decoder]
+  (basePath: String, R: Repository[L, F, A]) = {
     val dsl = new Http4sDsl[F] {}
     import dsl._
     HttpRoutes.of[F] {
@@ -25,9 +23,9 @@ object HutRoutes {
         R.get(id)
           .flatMap(_ match {
             case Some(a) => Ok(a.asJson)
-            case None    => NotFound(id)
+            case None    => NotFound()
           })
-        }
+      }
 
       case req @ POST -> Root / basePath =>
         req

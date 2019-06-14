@@ -15,19 +15,18 @@ import cats.Monad
 import InMemoryStore._
 
 object HutServer {
-
-//TODO make a trait instead of ListBuffer
-  def stream[F[_]: ConcurrentEffect: Timer: Sync: Monad, A: Encoder: Decoder](basePath: String)
-     = {
-     implicit val store: LBStore[F,(String,A)] = InMemoryStore.lbImpl[F,(String,A)]
-     val repo = Repository.impl[ListBuffer,F,A](store)
+  def stream[L[_],
+             F[_]: ConcurrentEffect: Timer: Sync: Monad,
+             A: Encoder: Decoder](basePath: String)(
+      implicit S: InMemoryStore[L, F, (String, A)]) = {
+        val R = Repository.Impl.empty[L,F,A]
     val httpApp =
-      (HutRoutes.hutRoutes[ListBuffer,F,A](basePath, repo)).orNotFound
-      for {
-        exitCode <- BlazeServerBuilder[F]
-          .bindHttp(8080, "0.0.0.0")
-          .withHttpApp(httpApp)
-          .serve
-      } yield exitCode
-    }.drain
+      (HutRoutes.hutRoutes[L, F, A](basePath, R)).orNotFound
+    for {
+      exitCode <- BlazeServerBuilder[F]
+        .bindHttp(8080, "0.0.0.0")
+        .withHttpApp(httpApp)
+        .serve
+    } yield exitCode
+  }.drain
 }
